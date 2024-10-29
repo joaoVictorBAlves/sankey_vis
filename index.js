@@ -34,7 +34,8 @@ const links = [
 const width = window.innerWidth - 35;
 const height = window.innerHeight - 20;
 const K = 50;
-const gap = 10;
+const FACTOR = K / 2;
+const gap = 5;
 
 // [ALL FUNCTIONS]
 
@@ -185,48 +186,29 @@ function defineY0ForLinks(nodeMap, links, K, factor) {
                 const sortedLinks = node.sourceLinks.sort((a, b) => a.value - b.value);
                 let yOffset = node.y + factor;
 
-                [1, 2, 3].forEach(value => {
-                    const linksOfValue = sortedLinks.filter(link => link.value == value);
-                    linksOfValue.forEach(link => {
-                        link.y0 = yOffset; // Atualizar y0 do link
-
-                        // Atualizar targetLinks com a mesma referência
-                        link.sourceNode.sourceLinks.forEach(targetLink => {
-                            if (targetLink == link) {
-                                targetLink.y0 = yOffset; // Manter a consistência
-                            }
-                        });
-                    });
-
-                    if (value == 1) {
-                        yOffset += 0;
-                    } else {
-                        yOffset += K;
-                    }
+                sortedLinks.forEach(link => {
+                    link.y0 = link.value == 1 ? yOffset : link.value == 2 ? yOffset + K : yOffset + 2 * K;
                 });
             });
         } else if (key == "Q") {
-            nodes.forEach(node => {
-                const sortedLinks = node.sourceLinks.sort((a, b) => {
-                    if (a.qtd !== b.qtd) {
-                        return a.qtd - b.qtd;
+            nodes.forEach((node, index) => {
+                const sortedLinks = node.sourceLinks.sort((a, b) => a.value - b.value);
+
+                let currentY = index == 0 ? node.y + sortedLinks[0].height / 2 : node.y;
+
+                [1, 2, 3].forEach(value => {
+                    const linksByValue = sortedLinks.filter(link => link.value
+                        == value);
+
+                    if (value > 1 && linksByValue.length > 0) currentY += linksByValue[0].height / 2;
+
+                    if (linksByValue.length > 0) {
+                        const y0 = currentY;
+                        linksByValue.forEach(link => {
+                            link.y0 = y0;
+                        });
+                        currentY += linksByValue[0].height / 2;
                     }
-                    return a.value - b.value;
-                });
-
-                let currentY = node.y + factor;
-
-                sortedLinks.forEach(link => {
-                    const originalLink = links.find(l => l.id == link.id)
-                    link.y0 = currentY;
-                    // Atualizar targetLinks com a mesma referência
-                    link.sourceNode.sourceLinks.forEach(targetLink => {
-                        if (targetLink == link) {
-                            targetLink.y0 = currentY; // Manter a consistência
-                        }
-                    });
-
-                    currentY += link.height;
                 });
             });
         }
@@ -262,13 +244,15 @@ function defineY1ForLinks(nodeMap, link, K, factor) {
                 });
             });
         } else if (key == "K") {
-            nodes.forEach(node => {
+            nodes.forEach((node) => {
                 const sortedLinks = node.targetLinks.sort((a, b) => a.value - b.value);
-                let currentY1 = node.y + factor;
+                let currentY1 = node.y + sortedLinks[0].height / 2;
 
-                sortedLinks.forEach(link => {
+                sortedLinks.forEach((link, i) => {
                     const originalLink = links.find(l => l.id == link.id);
-
+                    if (i != 0) {
+                        currentY1 += link.height / 2;
+                    }
                     link.y1 = currentY1;
                     originalLink.y1 = currentY1;
 
@@ -278,7 +262,8 @@ function defineY1ForLinks(nodeMap, link, K, factor) {
                         }
                     });
 
-                    currentY1 += link.height;
+
+                    currentY1 += link.height / 2;
                 });
             });
         }
@@ -359,17 +344,13 @@ Object.values(nodeMap).forEach(node => {
     });
 });
 // [MAP] Define y0 (out) and y1 (in)
-defineY0ForLinks(nodeMap, links, K, 0);
-defineY1ForLinks(nodeMap, links, K, 0);
+defineY0ForLinks(nodeMap, links, K, FACTOR);
+defineY1ForLinks(nodeMap, links, K, FACTOR);
 syncLinkPositions(nodeMap, links);
-
-console.log(nodeMap)
-console.log(links)
 
 // [DRAW] create svg
 const svg = d3.select("#sankey")
     .append("svg")
-    .style("border", "1px solid black")
     .attr("width", width)
     .attr("height", height);
 
@@ -387,15 +368,32 @@ const Vs = svg.selectAll(".node")
     .attr("height", d => d.height)
     .style("fill", "steelblue");
 
+const line = d3.line()
+    .curve(d3.curveBasis)
+    .x(d => d.x)
+    .y(d => d.y);
+
 const As = svg.selectAll(".link")
     .data(links)
     .enter()
-    .append("line")
+    .append("path")
     .attr("class", "link")
-    .attr("x1", d => d.x0 + nodeWidth)
-    .attr("y1", d => d.y0)
-    .attr("x2", d => d.x1)
-    .attr("y2", d => d.y1)
-    .style("stroke", "black")
-    .style("stroke-width", 1);
-
+    .attr("d", d => {
+        const points = [
+            { x: d.x0 + nodeWidth, y: d.y0 },
+            { x: (d.x0 + d.x1) / 2, y: d.y0 },
+            { x: (d.x0 + d.x1) / 2, y: d.y1 },
+            { x: d.x1, y: d.y1 }
+        ];
+        return line(points);
+    })
+    .attr("stroke", d => {
+        if (d.value == 1)
+            return "#E07121";
+        if (d.value == 2)
+            return "#68E4C9";
+        if (d.value == 3)
+            return "#916BD4";
+    })
+    .style("stroke-width", d => d.height)
+    .style("fill", "none");
