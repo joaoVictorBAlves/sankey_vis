@@ -34,6 +34,7 @@ const links = [
 const width = window.innerWidth - 35;
 const height = window.innerHeight - 20;
 const K = 50;
+const REDUCTOR = 0.5;
 const FACTOR = K / 2;
 const gap = 5;
 
@@ -126,7 +127,7 @@ function heightLink(link, K) {
  * @param {number} K - A constant factor used to calculate the height of nodes.
  * @param {number} gap - The gap between nodes in the same group.
  */
-function calculateNodePositions(nodeMap, K, gap) {
+function calculateNodePositions(nodeMap, K, gap, reductor) {
     const nodeGroups = groupNodesByInitial(nodeMap);
 
     Object.entries(nodeGroups).forEach(([key, nodes]) => {
@@ -142,7 +143,7 @@ function calculateNodePositions(nodeMap, K, gap) {
             } else if (key == "K") {
                 // Grupo K: altura é o somatório das alturas dos links de saída
                 node.height = node.targetLinks.reduce((sum, link) => {
-                    return sum + heightLink(link, K);
+                    return sum + (heightLink(link, K) * reductor);
                 }, 0);
             }
 
@@ -178,7 +179,7 @@ function calculateLinkHeights(nodeMap, K) {
  * @param {number} K - A constant factor used to calculate the height of links.
  * @param {number} factor - A factor used to adjust the y0 position of links.
  */
-function defineY0ForLinks(nodeMap, links, K, factor) {
+function defineY0ForLinks(nodeMap, links, K, factor, reductor) {
     const nodeGroups = groupNodesByInitial(nodeMap); // Agrupar nós por inicial (A, Q, K)
     Object.entries(nodeGroups).forEach(([key, nodes]) => {
         if (key == "A") {
@@ -222,7 +223,7 @@ function defineY0ForLinks(nodeMap, links, K, factor) {
  * @param {Object} nodeMap - An object where keys are node identifiers and values are node objects.
  * @param {number} factor - A numerical factor that will be applied to each node in the nodeMap.
  */
-function defineY1ForLinks(nodeMap, link, K, factor) {
+function defineY1ForLinks(nodeMap, link, K, factor, reductor) {
     const nodeGroups = groupNodesByInitial(nodeMap); // Agrupar nós por inicial (A, Q, K)
 
     Object.entries(nodeGroups).forEach(([key, nodes]) => {
@@ -246,12 +247,12 @@ function defineY1ForLinks(nodeMap, link, K, factor) {
         } else if (key == "K") {
             nodes.forEach((node) => {
                 const sortedLinks = node.targetLinks.sort((a, b) => a.value - b.value);
-                let currentY1 = node.y + sortedLinks[0].height / 2;
+                let currentY1 = node.y + (sortedLinks[0].height / 2) * reductor;
 
                 sortedLinks.forEach((link, i) => {
                     const originalLink = links.find(l => l.id == link.id);
                     if (i != 0) {
-                        currentY1 += link.height / 2;
+                        currentY1 += (link.height / 2) * reductor;
                     }
                     link.y1 = currentY1;
                     originalLink.y1 = currentY1;
@@ -263,7 +264,7 @@ function defineY1ForLinks(nodeMap, link, K, factor) {
                     });
 
 
-                    currentY1 += link.height / 2;
+                    currentY1 += (link.height / 2) * reductor;
                 });
             });
         }
@@ -332,7 +333,7 @@ nodeGroupKeys.forEach((key, index) => {
 });
 
 // [MAP] map height of nodes
-calculateNodePositions(nodeMap, K, gap);
+calculateNodePositions(nodeMap, K, gap, REDUCTOR);
 
 // [MAP] map links height
 calculateLinkHeights(nodeMap, K);
@@ -344,8 +345,8 @@ Object.values(nodeMap).forEach(node => {
     });
 });
 // [MAP] Define y0 (out) and y1 (in)
-defineY0ForLinks(nodeMap, links, K, FACTOR);
-defineY1ForLinks(nodeMap, links, K, FACTOR);
+defineY0ForLinks(nodeMap, links, K, FACTOR, REDUCTOR);
+defineY1ForLinks(nodeMap, links, K, FACTOR, REDUCTOR);
 syncLinkPositions(nodeMap, links);
 
 // [DRAW] create svg
@@ -379,21 +380,49 @@ const As = svg.selectAll(".link")
     .append("path")
     .attr("class", "link")
     .attr("d", d => {
-        const points = [
-            { x: d.x0 + nodeWidth, y: d.y0 },
-            { x: (d.x0 + d.x1) / 2, y: d.y0 },
-            { x: (d.x0 + d.x1) / 2, y: d.y1 },
-            { x: d.x1, y: d.y1 }
-        ];
-        return line(points);
+        const sourceWidth = d.height; // Largura inicial do ribbon
+        const targetWidth = d.target[0] === "K" ? d.height * REDUCTOR : d.height; // Largura reduzida se o target for "K"
+
+        // Ponto inicial (x0, y0) e final (x1, y1)
+        const x0 = d.x0 + nodeWidth;
+        const y0Top = d.y0 - sourceWidth / 2;
+        const y0Bottom = d.y0 + sourceWidth / 2;
+
+        const x1 = d.x1;
+        const y1Top = d.y1 - targetWidth / 2;
+        const y1Bottom = d.y1 + targetWidth / 2;
+
+        // Ponto intermediário para curva de Bézier
+        const midX = (x0 + x1) / 2;
+
+        return `
+            M${x0},${y0Top}
+            C${midX},${y0Top} ${midX},${y1Top} ${x1},${y1Top}
+            L${x1},${y1Bottom}
+            C${midX},${y1Bottom} ${midX},${y0Bottom} ${x0},${y0Bottom}
+            Z
+        `;
     })
-    .attr("stroke", d => {
-        if (d.value == 1)
-            return "#E07121";
-        if (d.value == 2)
-            return "#68E4C9";
-        if (d.value == 3)
-            return "#916BD4";
+    .attr("fill", d => {
+        if (d.value == 1) return "#E07121";
+        if (d.value == 2) return "#68E4C9";
+        if (d.value == 3) return "#916BD4";
+        return "lightgray"; // Cor padrão
     })
-    .style("stroke-width", d => d.height)
-    .style("fill", "none");
+    .attr("opacity", 0.8) // Ajusta a opacidade do ribbon
+    .on("mouseover", function () {
+        d3.select(this)
+            .attr("fill", "#D0D0D0") // Cor de destaque
+            .attr("opacity", 1);   // Opacidade maior no hover
+    })
+    .on("mouseout", function () {
+        d3.select(this)
+            .attr("fill", d => {
+                if (d.value == 1) return "#E07121";
+                if (d.value == 2) return "#68E4C9";
+                if (d.value == 3) return "#916BD4";
+                return "lightgray";
+            })
+            .attr("opacity", 0.8); // Retorna ao estilo original
+    });
+
