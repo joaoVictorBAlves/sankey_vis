@@ -380,10 +380,9 @@ const As = svg.selectAll(".link")
     .append("path")
     .attr("class", "link")
     .attr("d", d => {
-        const sourceWidth = d.height; // Largura inicial do ribbon
-        const targetWidth = d.target[0] === "K" ? d.height * REDUCTOR : d.height; // Largura reduzida se o target for "K"
+        const sourceWidth = d.height;
+        const targetWidth = d.target[0] === "K" ? d.height * REDUCTOR : d.height;
 
-        // Ponto inicial (x0, y0) e final (x1, y1)
         const x0 = d.x0 + nodeWidth;
         const y0Top = d.y0 - sourceWidth / 2;
         const y0Bottom = d.y0 + sourceWidth / 2;
@@ -392,7 +391,6 @@ const As = svg.selectAll(".link")
         const y1Top = d.y1 - targetWidth / 2;
         const y1Bottom = d.y1 + targetWidth / 2;
 
-        // Ponto intermediário para curva de Bézier
         const midX = (x0 + x1) / 2;
 
         return `
