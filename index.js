@@ -1,44 +1,153 @@
 // [DATA] dataset
-const nodes = [
-    { id: "A1" },
-    { id: "A2" },
-    { id: "A3" },
-    { id: "Q1" },
-    { id: "Q2" },
-    { id: "Q3" },
-    { id: "K1" },
-    { id: "K2" },
-    { id: "K3" }
-];
+// const nodes = [
+//     { id: "A1" },
+//     { id: "A2" },
+//     { id: "A3" },
+//     { id: "Q1" },
+//     { id: "Q2" },
+//     { id: "Q3" },
+//     { id: "K1" },
+//     { id: "K2" },
+//     { id: "K3" }
+// ];
 
-const links = [
-    { source: "A1", target: "Q1", value: 1, qtd: null },
-    { source: "A1", target: "Q3", value: 2, qtd: null },
-    { source: "A2", target: "Q1", value: 3, qtd: null },
-    { source: "A2", target: "Q2", value: 3, qtd: null },
-    { source: "A2", target: "Q3", value: 3, qtd: null },
-    { source: "A3", target: "Q2", value: 2, qtd: null },
-    { source: "A3", target: "Q1", value: 1, qtd: null },
-    { source: "A3", target: "Q3", value: 2, qtd: null },
-    { source: "Q1", target: "K1", value: 1, qtd: 2 },
-    { source: "Q1", target: "K1", value: 3, qtd: 1 },
-    { source: "Q2", target: "K1", value: 2, qtd: 1 },
-    { source: "Q2", target: "K1", value: 3, qtd: 1 },
-    { source: "Q2", target: "K2", value: 2, qtd: 1 },
-    { source: "Q2", target: "K2", value: 3, qtd: 1 },
-    { source: "Q3", target: "K3", value: 2, qtd: 2 },
-    { source: "Q3", target: "K3", value: 3, qtd: 1 },
-];
+// const links = [
+//     { source: "A1", target: "Q1", value: 1, qtd: null },
+//     { source: "A1", target: "Q3", value: 2, qtd: null },
+//     { source: "A2", target: "Q1", value: 3, qtd: null },
+//     { source: "A2", target: "Q2", value: 3, qtd: null },
+//     { source: "A2", target: "Q3", value: 3, qtd: null },
+//     { source: "A3", target: "Q2", value: 2, qtd: null },
+//     { source: "A3", target: "Q1", value: 1, qtd: null },
+//     { source: "A3", target: "Q3", value: 2, qtd: null },
+//     { source: "Q1", target: "K1", value: 1, qtd: 2 },
+//     { source: "Q1", target: "K1", value: 3, qtd: 1 },
+//     { source: "Q2", target: "K1", value: 2, qtd: 1 },
+//     { source: "Q2", target: "K1", value: 3, qtd: 1 },
+//     { source: "Q2", target: "K2", value: 2, qtd: 1 },
+//     { source: "Q2", target: "K2", value: 3, qtd: 1 },
+//     { source: "Q3", target: "K3", value: 2, qtd: 2 },
+//     { source: "Q3", target: "K3", value: 3, qtd: 1 },
+// ];
+
+const { nodes, links } = generateDataset(50, 20, 5, 10, 40, 70);
 
 // [SETUP] width and height available
 const width = window.innerWidth - 35;
 const height = window.innerHeight - 20;
-const K = 50;
-const REDUCTOR = 0.5;
+
+const K = 5;
+const REDUCTOR_Q = 0.15;
+const REDUCTOR_K = 0.051;
 const FACTOR = K / 2;
-const gap = 5;
+const gapA = 5;
+const gapQ = 5;
+const gapK = 5.1;
+
 
 // [ALL FUNCTIONS]
+/**
+ * Gera um dataset contendo nós de alunos (A), questões (Q) e habilidades (K),
+ * e links que conectam esses nós. A função permite especificar a porcentagem de 
+ * valores nos links de A → Q (valores 1, 2 ou 3). Se as porcentagens não forem 
+ * especificadas, a distribuição será feita de forma aleatória.
+ *
+ * A função cria os seguintes tipos de links:
+ * - A → Q: Conecta alunos (A) a questões (Q) com valores de 1, 2 ou 3.
+ * - Q → K: Conecta questões (Q) a habilidades (K) com valores de 1, 2 ou 3, 
+ *           baseados na quantidade de links A → Q com o mesmo valor.
+ *
+ * @param {number} numA - O número de alunos (A).
+ * @param {number} numQ - O número de questões (Q).
+ * @param {number} numK - O número de habilidades (K).
+ * @param {number} [percentage1=null] - A porcentagem de links A → Q com valor 1 (entre 0 e 100).
+ * @param {number} [percentage2=null] - A porcentagem de links A → Q com valor 2 (entre 0 e 100).
+ * @param {number} [percentage3=null] - A porcentagem de links A → Q com valor 3 (entre 0 e 100).
+ * 
+ * @returns {Object} - Um objeto contendo:
+ *  - `nodes` (Array): Um array com os nós gerados, incluindo alunos (A), questões (Q) e habilidades (K).
+ *  - `links` (Array): Um array com os links gerados, contendo conexões A → Q e Q → K.
+ */
+function generateDataset(numA, numQ, numK, percentage1 = null, percentage2 = null, percentage3 = null) {
+    const nodes = [];
+    const links = [];
+    const aToQLinks = []; // Armazena os links de A → Q
+
+    // Gerar nós de alunos (A), questões (Q) e habilidades (K)
+    for (let i = 1; i <= numA; i++) nodes.push({ id: `A${i}` });
+    for (let i = 1; i <= numQ; i++) nodes.push({ id: `Q${i}` });
+    for (let i = 1; i <= numK; i++) nodes.push({ id: `K${i}` });
+
+    // Se não passar as porcentagens, gerar aleatoriamente
+    if (percentage1 === null && percentage2 === null && percentage3 === null) {
+        percentage1 = Math.random() * 100;
+        percentage2 = Math.random() * (100 - percentage1);
+        percentage3 = 100 - percentage1 - percentage2;
+    }
+
+    // Normalizar as porcentagens para garantir que somem 100%
+    const totalPercentage = percentage1 + percentage2 + percentage3;
+    const scale = 100 / totalPercentage;
+    percentage1 = Math.round(percentage1 * scale);
+    percentage2 = Math.round(percentage2 * scale);
+    percentage3 = 100 - percentage1 - percentage2;
+
+    // Função para gerar um valor aleatório de 1, 2 ou 3 com base nas porcentagens
+    function getRandomValue() {
+        const rand = Math.random() * 100;
+        if (rand < percentage1) return 1;
+        if (rand < percentage1 + percentage2) return 2;
+        return 3;
+    }
+
+    // Gerar conexões de A → Q (um link único por A → Q)
+    for (let i = 1; i <= numA; i++) {
+        for (let j = 1; j <= numQ; j++) {
+            aToQLinks.push({
+                source: `A${i}`,
+                target: `Q${j}`,
+                value: getRandomValue() // Usar a função de valor aleatório com base nas porcentagens
+            });
+        }
+    }
+
+    // Adicionar links de A → Q ao array principal de links
+    links.push(...aToQLinks);
+
+    // Gerar conexões aleatórias de Q → K
+    for (let i = 1; i <= numQ; i++) {
+        const connectedKs = new Set(); // Evitar repetição de conexões Q → K
+
+        // Decidir quantos K serão conectados aleatoriamente ao Q
+        const numConnections = Math.floor(Math.random() * numK) + 1; // Pelo menos 1 K
+
+        while (connectedKs.size < numConnections) {
+            const randomK = `K${Math.floor(Math.random() * numK) + 1}`;
+            if (!connectedKs.has(randomK)) {
+                connectedKs.add(randomK);
+
+                // Adicionar até 3 links para o mesmo Q → K com valores 1, 2, 3
+                for (let value = 1; value <= 3; value++) {
+                    // Calcular qtd para cada link
+                    const qtd = aToQLinks.filter(
+                        link => link.target === `Q${i}` && link.value === value
+                    ).length;
+
+                    // Adicionar o link Q → K
+                    links.push({
+                        source: `Q${i}`,
+                        target: randomK,
+                        value: value,
+                        qtd: qtd
+                    });
+                }
+            }
+        }
+    }
+
+    return { nodes, links };
+}
+
 
 /**
  * Creates a map of nodes where the key is the node id and the value is an object containing node details and links.
@@ -125,13 +234,22 @@ function heightLink(link, K) {
  *
  * @param {Object} nodeMap - A map of nodes where the key is the node id and the value is an object containing node details and links.
  * @param {number} K - A constant factor used to calculate the height of nodes.
- * @param {number} gap - The gap between nodes in the same group.
+ * @param {number} gapA - The gapA between nodes in the same group.
  */
-function calculateNodePositions(nodeMap, K, gap, reductor) {
+function calculateNodePositions(nodeMap, K, gapA, gapQ, gapK, reductor_Q, reductor_K) {
     const nodeGroups = groupNodesByInitial(nodeMap);
 
     Object.entries(nodeGroups).forEach(([key, nodes]) => {
         let currentY = 0;
+        let gap;
+
+        if (key == "A") {
+            gap = gapA;
+        } else if (key == "Q") {
+            gap = gapQ;
+        } else if (key == "K") {
+            gap = gapK;
+        }
 
         nodes.forEach(node => {
             if (key == "A") {
@@ -139,11 +257,11 @@ function calculateNodePositions(nodeMap, K, gap, reductor) {
                 node.height = 3 * K;
             } else if (key == "Q") {
                 // Grupo Q: altura é quantidade de links de entrada * K
-                node.height = node.targetLinks.length * K;
+                node.height = node.targetLinks.length * K * reductor_Q;
             } else if (key == "K") {
                 // Grupo K: altura é o somatório das alturas dos links de saída
                 node.height = node.targetLinks.reduce((sum, link) => {
-                    return sum + (heightLink(link, K) * reductor);
+                    return sum + (heightLink(link, K) * reductor_K);
                 }, 0);
             }
 
@@ -179,7 +297,7 @@ function calculateLinkHeights(nodeMap, K) {
  * @param {number} K - A constant factor used to calculate the height of links.
  * @param {number} factor - A factor used to adjust the y0 position of links.
  */
-function defineY0ForLinks(nodeMap, links, K, factor, reductor) {
+function defineY0ForLinks(nodeMap, links, K, factor, reductor_Q, reductor_K) {
     const nodeGroups = groupNodesByInitial(nodeMap); // Agrupar nós por inicial (A, Q, K)
     Object.entries(nodeGroups).forEach(([key, nodes]) => {
         if (key == "A") {
@@ -195,20 +313,20 @@ function defineY0ForLinks(nodeMap, links, K, factor, reductor) {
             nodes.forEach((node, index) => {
                 const sortedLinks = node.sourceLinks.sort((a, b) => a.value - b.value);
 
-                let currentY = index == 0 ? node.y + sortedLinks[0].height / 2 : node.y;
+                let currentY = index == 0 ? node.y + (sortedLinks[0].height / 2) * reductor_Q : node.y + (sortedLinks[0].height / 2) * reductor_Q;
 
                 [1, 2, 3].forEach(value => {
                     const linksByValue = sortedLinks.filter(link => link.value
                         == value);
 
-                    if (value > 1 && linksByValue.length > 0) currentY += linksByValue[0].height / 2;
+                    if (value > 1 && linksByValue.length > 0) currentY += (linksByValue[0].height / 2) * reductor_Q;
 
                     if (linksByValue.length > 0) {
                         const y0 = currentY;
                         linksByValue.forEach(link => {
                             link.y0 = y0;
                         });
-                        currentY += linksByValue[0].height / 2;
+                        currentY += (linksByValue[0].height / 2) * reductor_Q;
                     }
                 });
             });
@@ -223,17 +341,23 @@ function defineY0ForLinks(nodeMap, links, K, factor, reductor) {
  * @param {Object} nodeMap - An object where keys are node identifiers and values are node objects.
  * @param {number} factor - A numerical factor that will be applied to each node in the nodeMap.
  */
-function defineY1ForLinks(nodeMap, link, K, factor, reductor) {
+function defineY1ForLinks(nodeMap, link, K, factor, reductor_Q, reductor_K) {
     const nodeGroups = groupNodesByInitial(nodeMap); // Agrupar nós por inicial (A, Q, K)
 
     Object.entries(nodeGroups).forEach(([key, nodes]) => {
         if (key == "Q") {
             nodes.forEach(node => {
                 const sortedLinks = node.targetLinks.sort((a, b) => a.value - b.value);
-                let currentY1 = node.y + factor;
+                let currentY1 = node.y + (sortedLinks[0].height / 2) * reductor_Q;
 
-                sortedLinks.forEach(link => {
+                sortedLinks.forEach((link, i) => {
+                    const originalLink = links.find(l => l.id == link.id);
+                    if (i != 0) {
+                        currentY1 += (link.height / 2) * reductor_Q;
+                    }
+
                     link.y1 = currentY1;
+                    originalLink.y1 = currentY1;
 
                     link.targetNode.targetLinks.forEach(sourceLink => {
                         if (sourceLink == link) {
@@ -241,18 +365,18 @@ function defineY1ForLinks(nodeMap, link, K, factor, reductor) {
                         }
                     });
 
-                    currentY1 += link.height;
+                    currentY1 += (link.height / 2) * reductor_Q;
                 });
             });
         } else if (key == "K") {
             nodes.forEach((node) => {
                 const sortedLinks = node.targetLinks.sort((a, b) => a.value - b.value);
-                let currentY1 = node.y + (sortedLinks[0].height / 2) * reductor;
+                let currentY1 = node.y + (sortedLinks[0].height / 2) * reductor_K;
 
                 sortedLinks.forEach((link, i) => {
                     const originalLink = links.find(l => l.id == link.id);
                     if (i != 0) {
-                        currentY1 += (link.height / 2) * reductor;
+                        currentY1 += (link.height / 2) * reductor_K;
                     }
                     link.y1 = currentY1;
                     originalLink.y1 = currentY1;
@@ -264,7 +388,7 @@ function defineY1ForLinks(nodeMap, link, K, factor, reductor) {
                     });
 
 
-                    currentY1 += (link.height / 2) * reductor;
+                    currentY1 += (link.height / 2) * reductor_K;
                 });
             });
         }
@@ -333,7 +457,7 @@ nodeGroupKeys.forEach((key, index) => {
 });
 
 // [MAP] map height of nodes
-calculateNodePositions(nodeMap, K, gap, REDUCTOR);
+calculateNodePositions(nodeMap, K, gapA, gapQ, gapK, REDUCTOR_Q, REDUCTOR_K);
 
 // [MAP] map links height
 calculateLinkHeights(nodeMap, K);
@@ -345,29 +469,48 @@ Object.values(nodeMap).forEach(node => {
     });
 });
 // [MAP] Define y0 (out) and y1 (in)
-defineY0ForLinks(nodeMap, links, K, FACTOR, REDUCTOR);
-defineY1ForLinks(nodeMap, links, K, FACTOR, REDUCTOR);
+defineY0ForLinks(nodeMap, links, K, FACTOR, REDUCTOR_Q, REDUCTOR_K);
+defineY1ForLinks(nodeMap, links, K, FACTOR, REDUCTOR_Q, REDUCTOR_K);
 syncLinkPositions(nodeMap, links);
 
 // [DRAW] create svg
 const svg = d3.select("#sankey")
     .append("svg")
     .attr("width", width)
-    .attr("height", height);
+    .attr("height", height)
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("overflow", "visible");
+
+d3.select("#sankey")
+    .style("width", "100%")
+    .style("height", `${height * 2}px`)
+    .style("overflow-y", "auto")
+    .style("overflow-x", "hidden");
 
 // [DRAW] create nodes Vs
 const Vs = svg.selectAll(".node")
     .data(Object.values(nodeMap))
     .enter()
-    .append("rect")
+    .append("g")
     .attr("class", "node")
-    .attr("x", d => {
-        return d.x
-    })
-    .attr("y", d => d.y)
+    .attr("transform", d => `translate(${d.x}, ${d.y})`);
+
+Vs.append("rect")
     .attr("width", nodeWidth)
     .attr("height", d => d.height)
     .style("fill", "steelblue");
+
+Vs.append("text")
+    .text(d => d.id)
+    .attr("x", nodeWidth / 2)
+    .attr("y", d => d.height / 2)
+    .attr("dy", "0.35em")
+    .style("fill", "white")
+    .style("font-size", "12px")
+    .style("text-anchor", "middle")
+    .style("font-family", "Arial, sans-serif");
+
 
 const line = d3.line()
     .curve(d3.curveBasis)
@@ -380,8 +523,8 @@ const As = svg.selectAll(".link")
     .append("path")
     .attr("class", "link")
     .attr("d", d => {
-        const sourceWidth = d.height;
-        const targetWidth = d.target[0] === "K" ? d.height * REDUCTOR : d.height;
+        const sourceWidth = d.source[0] === "Q" ? d.height * REDUCTOR_Q : d.height;
+        const targetWidth = d.target[0] === "Q" ? d.height * REDUCTOR_Q : d.target[0] === "K" ? d.height * REDUCTOR_K : d.height;
 
         const x0 = d.x0 + nodeWidth;
         const y0Top = d.y0 - sourceWidth / 2;
@@ -405,13 +548,13 @@ const As = svg.selectAll(".link")
         if (d.value == 1) return "#E07121";
         if (d.value == 2) return "#68E4C9";
         if (d.value == 3) return "#916BD4";
-        return "lightgray"; // Cor padrão
+        return "lightgray";
     })
-    .attr("opacity", 0.8) // Ajusta a opacidade do ribbon
+    .attr("opacity", 0.8)
     .on("mouseover", function () {
         d3.select(this)
-            .attr("fill", "#D0D0D0") // Cor de destaque
-            .attr("opacity", 1);   // Opacidade maior no hover
+            .attr("opacity", 1.2)
+            .raise();
     })
     .on("mouseout", function () {
         d3.select(this)
@@ -421,6 +564,6 @@ const As = svg.selectAll(".link")
                 if (d.value == 3) return "#916BD4";
                 return "lightgray";
             })
-            .attr("opacity", 0.8); // Retorna ao estilo original
+            .attr("opacity", 0.8);
     });
 
