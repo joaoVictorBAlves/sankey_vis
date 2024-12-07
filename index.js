@@ -565,7 +565,6 @@ function sortNodesByLinkValue(nodeMap, value, order) {
 
 // [MAP] map nodes and links
 const nodeMap = createNodeMap(nodes, links);
-sortNodesByLinkValue(nodeMap, 3, "descending")
 
 
 // [MAP] define x position of node groups
