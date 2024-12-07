@@ -30,7 +30,7 @@
 //     { source: "Q3", target: "K3", value: 3, qtd: 1 },
 // ];
 
-let { nodes, links } = generateDataset(4, 5, 5, 10, 40, 70);
+let { nodes, links } = generateDataset(4, 5, 5, 20, 40, 60);
 
 // [SETUP] width and height available
 const width = window.innerWidth - 35;
@@ -79,7 +79,7 @@ function generateDataset(numA, numQ, numK, percentage1 = null, percentage2 = nul
     for (let i = 1; i <= numK; i++) nodes.push({ id: `K${i}` });
 
     // Se não passar as porcentagens, gerar aleatoriamente
-    if (percentage1 === null && percentage2 === null && percentage3 === null) {
+    if (percentage1 == null && percentage2 == null && percentage3 == null) {
         percentage1 = Math.random() * 100;
         percentage2 = Math.random() * (100 - percentage1);
         percentage3 = 100 - percentage1 - percentage2;
@@ -130,7 +130,7 @@ function generateDataset(numA, numQ, numK, percentage1 = null, percentage2 = nul
                 for (let value = 1; value <= 3; value++) {
                     // Calcular qtd para cada link
                     const qtd = aToQLinks.filter(
-                        link => link.target === `Q${i}` && link.value === value
+                        link => link.target == `Q${i}` && link.value == value
                     ).length;
 
                     // Adicionar o link Q → K
@@ -430,6 +430,13 @@ function syncLinkPositions(nodeMap, links) {
     });
 }
 
+/**
+ * Atualiza a cor de preenchimento dos nós conectados e a opacidade dos links relacionados com base em um link específico.
+ *
+ * @param {Object} link - O link central que será usado como base para encontrar nós e links conectados.
+ * @param {number} opacityValue - O valor de opacidade a ser aplicado nos links relacionados.
+ * @param {string} fillColor - A cor de preenchimento a ser aplicada aos nós conectados.
+ */
 function updateLinksAndNodesByLink(link, opacityValue, fillColor) {
     let conNodes = [];
     Vs._groups[0].forEach(node => {
@@ -468,15 +475,22 @@ function updateLinksAndNodesByLink(link, opacityValue, fillColor) {
     // Update the opacity of the links
     As._groups[0].filter(linkElement =>
         conLinks.some(conLink =>
-            conLink.source === linkElement.__data__.source &&
-            conLink.target === linkElement.__data__.target &&
-            conLink.value === linkElement.__data__.value
+            conLink.source == linkElement.__data__.source &&
+            conLink.target == linkElement.__data__.target &&
+            conLink.value == linkElement.__data__.value
         )
     ).forEach(linkElement => {
         d3.select(linkElement).attr("opacity", opacityValue).raise();
     });
 }
 
+/**
+ * Atualiza a cor de preenchimento dos nós conectados e a opacidade dos links relacionados com base em um nó específico.
+ *
+ * @param {Object} node - O nó central que será usado como base para encontrar nós e links conectados.
+ * @param {number} opacityValue - O valor de opacidade a ser aplicado nos links relacionados.
+ * @param {string} fillColor - A cor de preenchimento a ser aplicada aos nós conectados.
+ */
 function updateLinksAndNodesByNode(node, opacityValue, fillColor) {
     let conLinks = [];
     let conNodes = [];
@@ -493,24 +507,26 @@ function updateLinksAndNodesByNode(node, opacityValue, fillColor) {
 
     if (node.id[0] != "Q") {
         conNodes.forEach(n => {
-            if (n?.targetLinks) {
-                conLinks.push(...n.targetLinks)
-                n.targetLinks.forEach(l => {
-                    Vs._groups[0].forEach(node => {
-                        if (node.__data__.id == l.source)
-                            conNodes.push(node.__data__);
-                    });
-                })
-            };
-            if (n?.sourceLinks) {
-                conLinks.push(...n.sourceLinks)
-                n.sourceLinks.forEach(l => {
-                    Vs._groups[0].forEach(nn => {
-                        if (nn.__data__.id == l.target && nn.id[0] != node.id[0])
-                            conNodes.push(nn.__data__);
-                    });
-                })
-            };
+            if (node.id[0] == "K")
+                if (n?.targetLinks) {
+                    conLinks.push(...n.targetLinks)
+                    n.targetLinks.forEach(l => {
+                        Vs._groups[0].forEach(node => {
+                            if (node.__data__.id == l.source)
+                                conNodes.push(node.__data__);
+                        });
+                    })
+                };
+            if (node.id[0] == "A")
+                if (n?.sourceLinks) {
+                    conLinks.push(...n.sourceLinks)
+                    n.sourceLinks.forEach(l => {
+                        Vs._groups[0].forEach(nn => {
+                            if (nn.__data__.id == l.target && nn.id[0] != node.id[0])
+                                conNodes.push(nn.__data__);
+                        });
+                    })
+                };
 
         })
     }
@@ -525,9 +541,9 @@ function updateLinksAndNodesByNode(node, opacityValue, fillColor) {
     // Update the opacity of the links
     As._groups[0].filter(linkElement =>
         conLinks.some(conLink =>
-            conLink.source === linkElement.__data__.source &&
-            conLink.target === linkElement.__data__.target &&
-            conLink.value === linkElement.__data__.value
+            conLink.source == linkElement.__data__.source &&
+            conLink.target == linkElement.__data__.target &&
+            conLink.value == linkElement.__data__.value
         )
     ).forEach(linkElement => {
         d3.select(linkElement).attr("opacity", opacityValue).raise();
@@ -542,30 +558,30 @@ function updateLinksAndNodesByNode(node, opacityValue, fillColor) {
  * @param {string} order - The order to sort the nodes, either "ascending" or "descending".
  */
 function sortNodesByLinkValue(nodeMap, value, order) {
-    const nodeGroups = groupNodesByInitial(nodeMap);
+    const nodes = Object.values(nodeMap);
 
-    Object.entries(nodeGroups).forEach(([key, nodes]) => {
-        nodes.sort((a, b) => {
-            const aLinksCount = a.sourceLinks.filter(link => link.value === value).length + a.targetLinks.filter(link => link.value === value).length;
-            const bLinksCount = b.sourceLinks.filter(link => link.value === value).length + b.targetLinks.filter(link => link.value === value).length;
+    nodes.sort((a, b) => {
+        const aLinksCount = a.sourceLinks.filter(link => link.value == value).length + a.targetLinks.filter(link => link.value == value).length;
+        const bLinksCount = b.sourceLinks.filter(link => link.value == value).length + b.targetLinks.filter(link => link.value == value).length;
 
-            if (order === "ascending") {
-                return aLinksCount - bLinksCount;
-            } else if (order === "descending") {
-                return bLinksCount - aLinksCount;
-            } else {
-                return 0;
-            }
-        });
+        if (order == "ascending") {
+            return aLinksCount - bLinksCount;
+        } else if (order == "descending") {
+            return bLinksCount - aLinksCount;
+        } else {
+            return 0;
+        }
     });
-
-    return nodeGroups;
+    console.log(nodes)
+    return nodes;
 }
 
 
 // [MAP] map nodes and links
-const nodeMap = createNodeMap(nodes, links);
+let nodeMap = createNodeMap(nodes, links);
+nodeMap = sortNodesByLinkValue(nodeMap, 3, "ascending")
 
+console.log("nodeMap pos sort", nodeMap)
 
 // [MAP] define x position of node groups
 const nodeGroups = groupNodesByInitial(nodeMap);
@@ -673,8 +689,8 @@ const As = svg.selectAll(".link")
     .append("path")
     .attr("class", "link")
     .attr("d", d => {
-        const sourceWidth = d.source[0] === "Q" ? d.height * REDUCTOR_Q : d.height;
-        const targetWidth = d.target[0] === "Q" ? d.height * REDUCTOR_Q : d.target[0] === "K" ? d.height * REDUCTOR_K : d.height;
+        const sourceWidth = d.source[0] == "Q" ? d.height * REDUCTOR_Q : d.height;
+        const targetWidth = d.target[0] == "Q" ? d.height * REDUCTOR_Q : d.target[0] == "K" ? d.height * REDUCTOR_K : d.height;
 
         const x0 = d.x0 + nodeWidth;
         const y0Top = d.y0 - sourceWidth / 2;
