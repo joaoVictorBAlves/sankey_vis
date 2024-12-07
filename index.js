@@ -30,19 +30,19 @@
 //     { source: "Q3", target: "K3", value: 3, qtd: 1 },
 // ];
 
-const { nodes, links } = generateDataset(50, 20, 5, 10, 40, 70);
+let { nodes, links } = generateDataset(4, 5, 5, 10, 40, 70);
 
 // [SETUP] width and height available
 const width = window.innerWidth - 35;
 const height = window.innerHeight - 20;
 
-const K = 5;
-const REDUCTOR_Q = 0.15;
-const REDUCTOR_K = 0.051;
+const K = 50;
+const REDUCTOR_Q = 0.5;
+const REDUCTOR_K = 0.1;
 const FACTOR = K / 2;
 const gapA = 5;
 const gapQ = 5;
-const gapK = 5.1;
+const gapK = 7;
 
 
 // [ALL FUNCTIONS]
@@ -430,6 +430,109 @@ function syncLinkPositions(nodeMap, links) {
     });
 }
 
+function updateLinksAndNodesByLink(link, opacityValue, fillColor) {
+    let conNodes = [];
+    Vs._groups[0].forEach(node => {
+        if (node.__data__.id == link.source || node.__data__.id == link.target)
+            conNodes.push(node.__data__);
+    });
+
+    let midNode = conNodes.find(node => node.id[0] == "Q");
+    let conLinks = [];
+
+    if (midNode.id == link.source) {
+        // Search in targetLinks
+        conLinks = midNode.targetLinks.filter(l => l.value == link.value);
+        conLinks.forEach(link => {
+            Vs._groups[0].forEach(node => {
+                if (node.__data__.id == link.source)
+                    conNodes.push(node.__data__);
+            });
+        });
+    } else {
+        // Search in sourceLinks
+        conLinks = midNode.sourceLinks.filter(l => l.value == link.value);
+        conLinks.forEach(link => {
+            Vs._groups[0].forEach(node => {
+                if (node.__data__.id == link.target)
+                    conNodes.push(node.__data__);
+            });
+        });
+    }
+
+    // Update the fill color of the nodes
+    Vs._groups[0].filter(node => conNodes.includes(node.__data__)).forEach(node => {
+        d3.select(node).select("rect").style("fill", fillColor);
+    });
+
+    // Update the opacity of the links
+    As._groups[0].filter(linkElement =>
+        conLinks.some(conLink =>
+            conLink.source === linkElement.__data__.source &&
+            conLink.target === linkElement.__data__.target &&
+            conLink.value === linkElement.__data__.value
+        )
+    ).forEach(linkElement => {
+        d3.select(linkElement).attr("opacity", opacityValue).raise();
+    });
+}
+
+function updateLinksAndNodesByNode(node, opacityValue, fillColor) {
+    let conLinks = [];
+    let conNodes = [];
+
+    if (node?.targetLinks) conLinks.push(...node.targetLinks);
+    if (node?.sourceLinks) conLinks.push(...node.sourceLinks);
+
+    conLinks.forEach(link => {
+        Vs._groups[0].forEach(node => {
+            if (node.__data__.id == link.source || node.__data__.id == link.target)
+                conNodes.push(node.__data__);
+        });
+    });
+
+    if (node.id[0] != "Q") {
+        conNodes.forEach(n => {
+            if (n?.targetLinks) {
+                conLinks.push(...n.targetLinks)
+                n.targetLinks.forEach(l => {
+                    Vs._groups[0].forEach(node => {
+                        if (node.__data__.id == l.source)
+                            conNodes.push(node.__data__);
+                    });
+                })
+            };
+            if (n?.sourceLinks) {
+                conLinks.push(...n.sourceLinks)
+                n.sourceLinks.forEach(l => {
+                    console.log(l)
+                    Vs._groups[0].forEach(node => {
+                        if (node.__data__.id == l.target)
+                            conNodes.push(node.__data__);
+                    });
+                })
+            };
+
+        })
+    }
+
+    // Update the fill color of the nodes
+    Vs._groups[0].filter(node => conNodes.includes(node.__data__)).forEach(node => {
+        d3.select(node).select("rect").style("fill", fillColor);
+    });
+
+    // Update the opacity of the links
+    As._groups[0].filter(linkElement =>
+        conLinks.some(conLink =>
+            conLink.source === linkElement.__data__.source &&
+            conLink.target === linkElement.__data__.target &&
+            conLink.value === linkElement.__data__.value
+        )
+    ).forEach(linkElement => {
+        d3.select(linkElement).attr("opacity", opacityValue).raise();
+    });
+}
+
 
 // [MAP] map nodes and links
 const nodeMap = createNodeMap(nodes, links);
@@ -494,12 +597,29 @@ const Vs = svg.selectAll(".node")
     .enter()
     .append("g")
     .attr("class", "node")
-    .attr("transform", d => `translate(${d.x}, ${d.y})`);
+    .attr("transform", d => `translate(${d.x}, ${d.y})`)
 
 Vs.append("rect")
     .attr("width", nodeWidth)
     .attr("height", d => d.height)
-    .style("fill", "steelblue");
+    .style("fill", "steelblue")
+    .on("mouseover", function () {
+        d3.select(this)
+            .style("fill", "#003049");
+
+        const node = d3.select(this)._groups[0][0].__data__;
+        console.log(node)
+        updateLinksAndNodesByNode(node, 1, "#003049")
+
+    })
+    .on("mouseout", function () {
+        d3.select(this)
+            .style("fill", "steelblue");
+
+        const node = d3.select(this)._groups[0][0].__data__;
+        updateLinksAndNodesByNode(node, 0.5, "steelblue")
+
+    })
 
 Vs.append("text")
     .text(d => d.id)
@@ -550,11 +670,15 @@ const As = svg.selectAll(".link")
         if (d.value == 3) return "#916BD4";
         return "lightgray";
     })
-    .attr("opacity", 0.8)
+    .attr("opacity", 0.5)
     .on("mouseover", function () {
         d3.select(this)
             .attr("opacity", 1.2)
             .raise();
+
+        const link = d3.select(this)._groups[0][0].__data__;
+        updateLinksAndNodesByLink(link, 1, "#003049")
+
     })
     .on("mouseout", function () {
         d3.select(this)
@@ -564,6 +688,10 @@ const As = svg.selectAll(".link")
                 if (d.value == 3) return "#916BD4";
                 return "lightgray";
             })
-            .attr("opacity", 0.8);
+            .attr("opacity", 0.5);
+
+        const link = d3.select(this)._groups[0][0].__data__;
+        updateLinksAndNodesByLink(link, 0.5, "steelblue")
+
     });
 
