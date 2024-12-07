@@ -505,16 +505,17 @@ function updateLinksAndNodesByNode(node, opacityValue, fillColor) {
             if (n?.sourceLinks) {
                 conLinks.push(...n.sourceLinks)
                 n.sourceLinks.forEach(l => {
-                    console.log(l)
-                    Vs._groups[0].forEach(node => {
-                        if (node.__data__.id == l.target)
-                            conNodes.push(node.__data__);
+                    Vs._groups[0].forEach(nn => {
+                        if (nn.__data__.id == l.target && nn.id[0] != node.id[0])
+                            conNodes.push(nn.__data__);
                     });
                 })
             };
 
         })
     }
+
+    conNodes = conNodes.filter(n => n.id[0] !== node.id[0]);
 
     // Update the fill color of the nodes
     Vs._groups[0].filter(node => conNodes.includes(node.__data__)).forEach(node => {
@@ -533,9 +534,39 @@ function updateLinksAndNodesByNode(node, opacityValue, fillColor) {
     });
 }
 
+/**
+ * Sorts nodes based on the number of links with a specific value.
+ *
+ * @param {Object} nodeMap - A map of nodes where the key is the node id and the value is an object containing node details and links.
+ * @param {number} value - The value to count in the links.
+ * @param {string} order - The order to sort the nodes, either "ascending" or "descending".
+ */
+function sortNodesByLinkValue(nodeMap, value, order) {
+    const nodeGroups = groupNodesByInitial(nodeMap);
+
+    Object.entries(nodeGroups).forEach(([key, nodes]) => {
+        nodes.sort((a, b) => {
+            const aLinksCount = a.sourceLinks.filter(link => link.value === value).length + a.targetLinks.filter(link => link.value === value).length;
+            const bLinksCount = b.sourceLinks.filter(link => link.value === value).length + b.targetLinks.filter(link => link.value === value).length;
+
+            if (order === "ascending") {
+                return aLinksCount - bLinksCount;
+            } else if (order === "descending") {
+                return bLinksCount - aLinksCount;
+            } else {
+                return 0;
+            }
+        });
+    });
+
+    return nodeGroups;
+}
+
 
 // [MAP] map nodes and links
 const nodeMap = createNodeMap(nodes, links);
+sortNodesByLinkValue(nodeMap, 3, "descending")
+
 
 // [MAP] define x position of node groups
 const nodeGroups = groupNodesByInitial(nodeMap);
