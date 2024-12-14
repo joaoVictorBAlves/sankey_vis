@@ -15,7 +15,7 @@ const gapQ = 50;
 const gapK = 50;
 
 // [SETUP] Orders
-const nodeOrder = { value: 1, order: "ascending" }
+const nodeOrder = { value: 1, order: "descending" }
 const linksOrder = [2, 3, 1];
 
 
@@ -654,7 +654,6 @@ Vs.append("rect")
             .style("fill", "#003049");
 
         const node = d3.select(this)._groups[0][0].__data__;
-        console.log(node)
         updateLinksAndNodesByNode(node, 1, "#003049")
 
     })
