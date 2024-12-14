@@ -19,7 +19,7 @@ const nodeOrder = { value: 1, order: "descending" }
 const linksOrder = [2, 3, 1];
 
 // [SETUP] Filters
-const appearingValues = [1];
+const appearingValues = [1, 2, 3];
 
 // [SETUP] Colors
 let nodeColor = appearingValues.length > 2 ? "steelblue" : "gray";
