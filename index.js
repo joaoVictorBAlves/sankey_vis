@@ -572,7 +572,19 @@ function sortNodesByLinkValue(nodeMap, value, order) {
             return 0;
         }
     });
-    console.log(nodes)
+
+    nodes.sort((a, b) => {
+        if (a.id[0] === b.id[0]) {
+            return 0;
+        } else if (a.id[0] === 'A') {
+            return -1;
+        } else if (a.id[0] === 'Q' && b.id[0] !== 'A') {
+            return -1;
+        } else {
+            return 1;
+        }
+    });
+
     return nodes;
 }
 
