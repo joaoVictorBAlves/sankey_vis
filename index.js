@@ -18,6 +18,12 @@ const gapK = 50;
 const nodeOrder = { value: 1, order: "descending" }
 const linksOrder = [2, 3, 1];
 
+// [SETUP] Filters
+const appearingValues = [1];
+
+// [SETUP] Colors
+let nodeColor = appearingValues.length > 2 ? "steelblue" : "gray";
+let nodeColorOver = appearingValues.length > 2 ? "#003049" : "#444444";
 
 // [ALL FUNCTIONS]
 /**
@@ -621,6 +627,20 @@ syncLinkPositions(nodeMap, links);
 // [SORT] Links
 links = links.sort((a, b) => linksOrder.indexOf(a.value) - linksOrder.indexOf(b.value));
 
+// [FILTER] Filter nodeMap
+let nodeMapFiltered = Object.fromEntries(
+    Object.entries(nodeMap).filter(([key, node]) => {
+        if (node.id[0] === 'A') {
+            return node.sourceLinks.some(link => appearingValues.includes(parseInt(link.value)));
+        } else {
+            return node.sourceLinks.some(link => appearingValues.includes(parseInt(link.value)) && link.qtd > 0) ||
+                node.targetLinks.some(link => appearingValues.includes(parseInt(link.value)) && link.qtd > 0);
+        }
+    })
+);
+
+// [FILTER] Filter links
+let filteredLinks = links.filter(link => appearingValues.includes(link.value));
 
 // [DRAW] create svg
 const svg = d3.select("#sankey")
@@ -639,7 +659,7 @@ d3.select("#sankey")
 
 // [DRAW] create nodes Vs (Nodes)
 const Vs = svg.selectAll(".node")
-    .data(Object.values(nodeMap))
+    .data(Object.values(nodeMapFiltered))
     .enter()
     .append("g")
     .attr("class", "node")
@@ -648,21 +668,21 @@ const Vs = svg.selectAll(".node")
 Vs.append("rect")
     .attr("width", nodeWidth)
     .attr("height", d => d.height)
-    .style("fill", "steelblue")
+    .style("fill", nodeColor)
     .on("mouseover", function () {
         d3.select(this)
-            .style("fill", "#003049");
+            .style("fill", nodeColorOver);
 
         const node = d3.select(this)._groups[0][0].__data__;
-        updateLinksAndNodesByNode(node, 1, "#003049")
+        updateLinksAndNodesByNode(node, 1, nodeColorOver)
 
     })
     .on("mouseout", function () {
         d3.select(this)
-            .style("fill", "steelblue");
+            .style("fill", nodeColor);
 
         const node = d3.select(this)._groups[0][0].__data__;
-        updateLinksAndNodesByNode(node, 0.5, "steelblue")
+        updateLinksAndNodesByNode(node, 0.5, nodeColor)
 
     })
 
@@ -683,7 +703,7 @@ const line = d3.line()
     .y(d => d.y);
 
 const As = svg.selectAll(".link")
-    .data(links)
+    .data(filteredLinks)
     .enter()
     .append("path")
     .attr("class", "link")
@@ -722,7 +742,7 @@ const As = svg.selectAll(".link")
             .raise();
 
         const link = d3.select(this)._groups[0][0].__data__;
-        updateLinksAndNodesByLink(link, 1, "#003049")
+        updateLinksAndNodesByLink(link, 1, nodeColorOver)
 
     })
     .on("mouseout", function () {
@@ -736,7 +756,7 @@ const As = svg.selectAll(".link")
             .attr("opacity", 0.5);
 
         const link = d3.select(this)._groups[0][0].__data__;
-        updateLinksAndNodesByLink(link, 0.5, "steelblue")
+        updateLinksAndNodesByLink(link, 0.5, nodeColor)
 
     });
 
