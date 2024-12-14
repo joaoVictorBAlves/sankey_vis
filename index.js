@@ -1,48 +1,22 @@
 // [DATA] dataset
-// const nodes = [
-//     { id: "A1" },
-//     { id: "A2" },
-//     { id: "A3" },
-//     { id: "Q1" },
-//     { id: "Q2" },
-//     { id: "Q3" },
-//     { id: "K1" },
-//     { id: "K2" },
-//     { id: "K3" }
-// ];
-
-// const links = [
-//     { source: "A1", target: "Q1", value: 1, qtd: null },
-//     { source: "A1", target: "Q3", value: 2, qtd: null },
-//     { source: "A2", target: "Q1", value: 3, qtd: null },
-//     { source: "A2", target: "Q2", value: 3, qtd: null },
-//     { source: "A2", target: "Q3", value: 3, qtd: null },
-//     { source: "A3", target: "Q2", value: 2, qtd: null },
-//     { source: "A3", target: "Q1", value: 1, qtd: null },
-//     { source: "A3", target: "Q3", value: 2, qtd: null },
-//     { source: "Q1", target: "K1", value: 1, qtd: 2 },
-//     { source: "Q1", target: "K1", value: 3, qtd: 1 },
-//     { source: "Q2", target: "K1", value: 2, qtd: 1 },
-//     { source: "Q2", target: "K1", value: 3, qtd: 1 },
-//     { source: "Q2", target: "K2", value: 2, qtd: 1 },
-//     { source: "Q2", target: "K2", value: 3, qtd: 1 },
-//     { source: "Q3", target: "K3", value: 2, qtd: 2 },
-//     { source: "Q3", target: "K3", value: 3, qtd: 1 },
-// ];
-
 let { nodes, links } = generateDataset(4, 5, 5, 20, 40, 60);
 
 // [SETUP] width and height available
 const width = window.innerWidth - 35;
 const height = window.innerHeight - 20;
 
+// [SETUP] Spatial constants
 const K = 50;
 const REDUCTOR_Q = 0.5;
-const REDUCTOR_K = 0.1;
+const REDUCTOR_K = 0.15;
 const FACTOR = K / 2;
-const gapA = 5;
-const gapQ = 5;
-const gapK = 7;
+const gapA = 50;
+const gapQ = 50;
+const gapK = 50;
+
+// [SETUP] Orders
+const nodeOrder = { value: 1, order: "ascending" }
+const linksOrder = [2, 3, 1];
 
 
 // [ALL FUNCTIONS]
@@ -334,7 +308,6 @@ function defineY0ForLinks(nodeMap, links, K, factor, reductor_Q, reductor_K) {
     });
 }
 
-
 /**
  * This function processes a map of nodes and applies a given factor to each node.
  * 
@@ -561,8 +534,19 @@ function sortNodesByLinkValue(nodeMap, value, order) {
     const nodes = Object.values(nodeMap);
 
     nodes.sort((a, b) => {
-        const aLinksCount = a.sourceLinks.filter(link => link.value == value).length + a.targetLinks.filter(link => link.value == value).length;
-        const bLinksCount = b.sourceLinks.filter(link => link.value == value).length + b.targetLinks.filter(link => link.value == value).length;
+        let aLinksCount, bLinksCount;
+
+        if (a.id[0] === 'A') {
+            aLinksCount = a.sourceLinks.filter(link => link.value == value).length;
+        } else {
+            aLinksCount = a.targetLinks.filter(link => link.value == value).length;
+        }
+
+        if (b.id[0] === 'A') {
+            bLinksCount = b.sourceLinks.filter(link => link.value == value).length;
+        } else {
+            bLinksCount = b.targetLinks.filter(link => link.value == value).length;
+        }
 
         if (order == "ascending") {
             return aLinksCount - bLinksCount;
@@ -591,9 +575,9 @@ function sortNodesByLinkValue(nodeMap, value, order) {
 
 // [MAP] map nodes and links
 let nodeMap = createNodeMap(nodes, links);
-nodeMap = sortNodesByLinkValue(nodeMap, 3, "ascending")
 
-console.log("nodeMap pos sort", nodeMap)
+// [SORT] Nodes
+nodeMap = sortNodesByLinkValue(nodeMap, nodeOrder.value, nodeOrder.order)
 
 // [MAP] define x position of node groups
 const nodeGroups = groupNodesByInitial(nodeMap);
@@ -634,6 +618,10 @@ defineY0ForLinks(nodeMap, links, K, FACTOR, REDUCTOR_Q, REDUCTOR_K);
 defineY1ForLinks(nodeMap, links, K, FACTOR, REDUCTOR_Q, REDUCTOR_K);
 syncLinkPositions(nodeMap, links);
 
+// [SORT] Links
+links = links.sort((a, b) => linksOrder.indexOf(a.value) - linksOrder.indexOf(b.value));
+
+
 // [DRAW] create svg
 const svg = d3.select("#sankey")
     .append("svg")
@@ -649,7 +637,7 @@ d3.select("#sankey")
     .style("overflow-y", "auto")
     .style("overflow-x", "hidden");
 
-// [DRAW] create nodes Vs
+// [DRAW] create nodes Vs (Nodes)
 const Vs = svg.selectAll(".node")
     .data(Object.values(nodeMap))
     .enter()
@@ -689,7 +677,7 @@ Vs.append("text")
     .style("text-anchor", "middle")
     .style("font-family", "Arial, sans-serif");
 
-
+// [DRAW] create links As (Links)
 const line = d3.line()
     .curve(d3.curveBasis)
     .x(d => d.x)
