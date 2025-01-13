@@ -1,22 +1,22 @@
 // [DATA] dataset
-let { nodes, links } = generateDataset(4, 5, 5, 20, 40, 60);
+let { nodes, links } = generateDataset(10, 5, 5, 20, 40, 60);
 
 // [SETUP] width and height available
 const width = window.innerWidth - 35;
 const height = window.innerHeight - 20;
 
 // [SETUP] Spatial constants
-const K = 50;
-const REDUCTOR_Q = 0.5;
-const REDUCTOR_K = 0.15;
+const K = 10;
+const REDUCTOR_Q = 0.8;
+const REDUCTOR_K = 0.3;
 const FACTOR = K / 2;
-const gapA = 50;
+const gapA = 30;
 const gapQ = 50;
 const gapK = 50;
 
 // [SETUP] Orders
-const nodeOrder = { value: 1, order: "descending" }
-const linksOrder = [2, 3, 1];
+const nodeOrder = { value: 3, order: "descending" }
+const linksOrder = [1, 2, 3];
 
 // [SETUP] Filters
 const appearingValues = [1, 2, 3];
@@ -684,7 +684,7 @@ Vs.append("rect")
         const node = d3.select(this)._groups[0][0].__data__;
         updateLinksAndNodesByNode(node, 0.5, nodeColor)
 
-    })
+    });
 
 Vs.append("text")
     .text(d => d.id)
@@ -731,8 +731,8 @@ const As = svg.selectAll(".link")
     })
     .attr("fill", d => {
         if (d.value == 1) return "#E07121";
-        if (d.value == 2) return "#68E4C9";
-        if (d.value == 3) return "#916BD4";
+        if (d.value == 2) return "#916BD4";
+        if (d.value == 3) return "#68E4C9";
         return "lightgray";
     })
     .attr("opacity", 0.5)
@@ -749,8 +749,8 @@ const As = svg.selectAll(".link")
         d3.select(this)
             .attr("fill", d => {
                 if (d.value == 1) return "#E07121";
-                if (d.value == 2) return "#68E4C9";
-                if (d.value == 3) return "#916BD4";
+                if (d.value == 2) return "#916BD4";
+                if (d.value == 3) return "#68E4C9";
                 return "lightgray";
             })
             .attr("opacity", 0.5);
