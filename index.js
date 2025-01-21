@@ -19,7 +19,7 @@ const nodeOrder = { value: 3, order: "descending" }
 const linksOrder = [1, 2, 3];
 
 // [SETUP] Filters
-const appearingValues = [1, 2, 3];
+const appearingValues = [2];
 
 // [SETUP] Colors
 let nodeColor = appearingValues.length > 2 ? "steelblue" : "gray";
@@ -542,13 +542,13 @@ function sortNodesByLinkValue(nodeMap, value, order) {
     nodes.sort((a, b) => {
         let aLinksCount, bLinksCount;
 
-        if (a.id[0] === 'A') {
+        if (a.id[0] == 'A') {
             aLinksCount = a.sourceLinks.filter(link => link.value == value).length;
         } else {
             aLinksCount = a.targetLinks.filter(link => link.value == value).length;
         }
 
-        if (b.id[0] === 'A') {
+        if (b.id[0] == 'A') {
             bLinksCount = b.sourceLinks.filter(link => link.value == value).length;
         } else {
             bLinksCount = b.targetLinks.filter(link => link.value == value).length;
@@ -564,11 +564,11 @@ function sortNodesByLinkValue(nodeMap, value, order) {
     });
 
     nodes.sort((a, b) => {
-        if (a.id[0] === b.id[0]) {
+        if (a.id[0] == b.id[0]) {
             return 0;
-        } else if (a.id[0] === 'A') {
+        } else if (a.id[0] == 'A') {
             return -1;
-        } else if (a.id[0] === 'Q' && b.id[0] !== 'A') {
+        } else if (a.id[0] == 'Q' && b.id[0] !== 'A') {
             return -1;
         } else {
             return 1;
@@ -630,7 +630,7 @@ links = links.sort((a, b) => linksOrder.indexOf(a.value) - linksOrder.indexOf(b.
 // [FILTER] Filter nodeMap
 let nodeMapFiltered = Object.fromEntries(
     Object.entries(nodeMap).filter(([key, node]) => {
-        if (node.id[0] === 'A') {
+        if (node.id[0] == 'A') {
             return node.sourceLinks.some(link => appearingValues.includes(parseInt(link.value)));
         } else {
             return node.sourceLinks.some(link => appearingValues.includes(parseInt(link.value)) && link.qtd > 0) ||
@@ -685,6 +685,114 @@ Vs.append("rect")
         updateLinksAndNodesByNode(node, 0.5, nodeColor)
 
     });
+
+// if (appearingValues.length < 3 && appearingValues.includes(1)) {
+//     Vs.append("rect")
+//         .attr("width", nodeWidth)
+//         .attr("y", d => 0)
+//         .attr("height", d => {
+//             let Ys0 = []
+//             let Ys1 = []
+//             const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
+//             const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
+//             links.forEach(link => {
+//                 if (link.source == d.id) {
+//                     Ys0.push(link.y0 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 } else {
+//                     Ys0.push(link.y1 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 }
+//             });
+//             links.forEach(link => {
+//                 if (link.source == d.id) {
+//                     Ys1.push(link.y0 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 } else {
+//                     Ys1.push(link.y1 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 }
+//             });
+//             const height = Math.max(...Ys1) - Math.min(...Ys0)
+//             return height;
+//         })
+//         .style("fill", "steelblue")
+// }
+// if (appearingValues.length < 3 && appearingValues.includes(2)) {
+//     Vs.append("rect")
+//         .attr("width", nodeWidth)
+//         .attr("y", d => {
+//             console.log(d)
+//             if (d.sourceLinks.filter(link => link.value == 1).length == 0) {
+//                 return 0;
+//             } else {
+//                 const sourceLinks = d.sourceLinks.filter(link => link.value == 2);
+//                 const minYLink = sourceLinks.sort((a, b) => a.y0 - b.y0)[0];
+//                 return minYLink.y0 - (minYLink.qtd ? minYLink.qtd * (K * REDUCTOR_Q / 2) : (K * REDUCTOR_Q / 2));
+//                 // return sourceLinks.y0 - (sourceLinks.value * (K * REDUCTOR_Q));
+//             }
+//             // if (d.id[0] == "Q") {
+//             //     const sourceLinks = d.sourceLinks.find(link => link.value == 2);
+//             //     console.log(sourceLinks)
+//             //     return sourceLinks.y0 - (sourceLinks.value * (K * REDUCTOR_Q));
+//             // } else if (d.id[0] == "K") {
+//             //     // const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
+//             //     // const minYLink = links.reduce((minLink, currentLink) => {
+//             //     //     return currentLink.y0 < minLink.y0 ? currentLink : minLink;
+//             //     // }, links[0]);
+
+//             //     // return minYLink.y0 - (minYLink.qtd ? minYLink.qtd * (K * REDUCTOR_K / 2) : (K * RED / 2));
+//             // }
+//             return K
+//         })
+//         .attr("height", d => {
+//             let Ys0 = []
+//             let Ys1 = []
+//             const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
+//             const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
+//             links.forEach(link => {
+//                 if (link.source == d.id) {
+//                     Ys0.push(link.y0 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 } else {
+//                     Ys0.push(link.y1 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 }
+//             });
+//             links.forEach(link => {
+//                 if (link.source == d.id) {
+//                     Ys1.push(link.y0 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 } else {
+//                     Ys1.push(link.y1 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 }
+//             });
+//             const height = Math.max(...Ys1) - Math.min(...Ys0)
+//             return height;
+//         })
+//         .style("fill", "steelblue")
+// }
+// if (appearingValues.length < 3 && appearingValues.includes(3)) {
+//     Vs.append("rect")
+//         .attr("width", nodeWidth)
+//         .attr("y", d => 0)
+//         .attr("height", d => {
+//             let Ys0 = []
+//             let Ys1 = []
+//             const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
+//             const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
+//             links.forEach(link => {
+//                 if (link.source == d.id) {
+//                     Ys0.push(link.y0 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 } else {
+//                     Ys0.push(link.y1 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 }
+//             });
+//             links.forEach(link => {
+//                 if (link.source == d.id) {
+//                     Ys1.push(link.y0 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 } else {
+//                     Ys1.push(link.y1 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+//                 }
+//             });
+//             const height = Math.max(...Ys1) - Math.min(...Ys0)
+//             return height;
+//         })
+//         .style("fill", "steelblue")
+// }
 
 Vs.append("text")
     .text(d => d.id)
