@@ -19,7 +19,7 @@ const nodeOrder = { value: 3, order: "descending" }
 const linksOrder = [1, 2, 3];
 
 // [SETUP] Filters
-const appearingValues = [2];
+const appearingValues = [1, 2, 3];
 
 // [SETUP] Colors
 let nodeColor = appearingValues.length > 2 ? "steelblue" : "gray";
@@ -669,6 +669,7 @@ Vs.append("rect")
     .attr("width", nodeWidth)
     .attr("height", d => d.height)
     .style("fill", nodeColor)
+    .style("cursor", "pointer")
     .on("mouseover", function () {
         d3.select(this)
             .style("fill", nodeColorOver);
@@ -683,117 +684,140 @@ Vs.append("rect")
 
         const node = d3.select(this)._groups[0][0].__data__;
         updateLinksAndNodesByNode(node, 0.5, nodeColor)
-
+        d3.selectAll("g.info-box").remove();
     });
 
-// if (appearingValues.length < 3 && appearingValues.includes(1)) {
-//     Vs.append("rect")
-//         .attr("width", nodeWidth)
-//         .attr("y", d => 0)
-//         .attr("height", d => {
-//             let Ys0 = []
-//             let Ys1 = []
-//             const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
-//             const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
-//             links.forEach(link => {
-//                 if (link.source == d.id) {
-//                     Ys0.push(link.y0 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 } else {
-//                     Ys0.push(link.y1 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 }
-//             });
-//             links.forEach(link => {
-//                 if (link.source == d.id) {
-//                     Ys1.push(link.y0 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 } else {
-//                     Ys1.push(link.y1 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 }
-//             });
-//             const height = Math.max(...Ys1) - Math.min(...Ys0)
-//             return height;
-//         })
-//         .style("fill", "steelblue")
-// }
-// if (appearingValues.length < 3 && appearingValues.includes(2)) {
-//     Vs.append("rect")
-//         .attr("width", nodeWidth)
-//         .attr("y", d => {
-//             console.log(d)
-//             if (d.sourceLinks.filter(link => link.value == 1).length == 0) {
-//                 return 0;
-//             } else {
-//                 const sourceLinks = d.sourceLinks.filter(link => link.value == 2);
-//                 const minYLink = sourceLinks.sort((a, b) => a.y0 - b.y0)[0];
-//                 return minYLink.y0 - (minYLink.qtd ? minYLink.qtd * (K * REDUCTOR_Q / 2) : (K * REDUCTOR_Q / 2));
-//                 // return sourceLinks.y0 - (sourceLinks.value * (K * REDUCTOR_Q));
-//             }
-//             // if (d.id[0] == "Q") {
-//             //     const sourceLinks = d.sourceLinks.find(link => link.value == 2);
-//             //     console.log(sourceLinks)
-//             //     return sourceLinks.y0 - (sourceLinks.value * (K * REDUCTOR_Q));
-//             // } else if (d.id[0] == "K") {
-//             //     // const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
-//             //     // const minYLink = links.reduce((minLink, currentLink) => {
-//             //     //     return currentLink.y0 < minLink.y0 ? currentLink : minLink;
-//             //     // }, links[0]);
+// [DRAW] create detailed info box on click and remove on mouseout
+Vs.on("click", function (event, d) {
+    const node = d3.select(this)._groups[0][0].__data__;
+    const linkCounts = { 1: 0, 2: 0, 3: 0 };
 
-//             //     // return minYLink.y0 - (minYLink.qtd ? minYLink.qtd * (K * REDUCTOR_K / 2) : (K * RED / 2));
-//             // }
-//             return K
-//         })
-//         .attr("height", d => {
-//             let Ys0 = []
-//             let Ys1 = []
-//             const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
-//             const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
-//             links.forEach(link => {
-//                 if (link.source == d.id) {
-//                     Ys0.push(link.y0 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 } else {
-//                     Ys0.push(link.y1 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 }
-//             });
-//             links.forEach(link => {
-//                 if (link.source == d.id) {
-//                     Ys1.push(link.y0 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 } else {
-//                     Ys1.push(link.y1 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 }
-//             });
-//             const height = Math.max(...Ys1) - Math.min(...Ys0)
-//             return height;
-//         })
-//         .style("fill", "steelblue")
-// }
-// if (appearingValues.length < 3 && appearingValues.includes(3)) {
-//     Vs.append("rect")
-//         .attr("width", nodeWidth)
-//         .attr("y", d => 0)
-//         .attr("height", d => {
-//             let Ys0 = []
-//             let Ys1 = []
-//             const links = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
-//             const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
-//             links.forEach(link => {
-//                 if (link.source == d.id) {
-//                     Ys0.push(link.y0 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 } else {
-//                     Ys0.push(link.y1 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 }
-//             });
-//             links.forEach(link => {
-//                 if (link.source == d.id) {
-//                     Ys1.push(link.y0 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 } else {
-//                     Ys1.push(link.y1 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
-//                 }
-//             });
-//             const height = Math.max(...Ys1) - Math.min(...Ys0)
-//             return height;
-//         })
-//         .style("fill", "steelblue")
-// }
+    node.sourceLinks.forEach(link => {
+        linkCounts[link.value]++;
+    });
 
+    node.targetLinks.forEach(link => {
+        linkCounts[link.value]++;
+    });
+
+    const pieData = Object.entries(linkCounts).map(([key, value]) => ({
+        value: value,
+        percentage: (value / (linkCounts[1] + linkCounts[2] + linkCounts[3])) * 100,
+        label: key
+    }));
+
+    const pie = d3.pie().value(d => d.value);
+    const arc = d3.arc().innerRadius(0).outerRadius(50);
+
+    const infoBox = svg.append("g")
+        .attr("class", "info-box")
+        .attr("transform", `translate(${node.x + nodeWidth + 10}, ${node.y})`)
+        .raise();
+
+    infoBox.append("rect")
+        .attr("width", 200)
+        .attr("height", 180)
+        .attr("rx", 4)
+        .attr("ry", 4)
+        .style("fill", "white")
+        .style("stroke", "black")
+        .style("stroke-width", 1);
+
+    infoBox.append("text")
+        .attr("x", 100)
+        .attr("y", 25)
+        .style("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "bold")
+        .text(`Node: ${node.id}`);
+
+    const pieChart = infoBox.append("g")
+        .attr("transform", "translate(100, 90)");
+
+    pieChart.selectAll("path")
+        .data(pie(pieData))
+        .enter()
+        .append("path")
+        .attr("d", arc)
+        .attr("fill", (d, i) => {
+            if (d.data.label == 1) return "#E07121";
+            if (d.data.label == 2) return "#916BD4";
+            if (d.data.label == 3) return "#68E4C9";
+            return "lightgray";
+        });
+
+    pieChart.selectAll("text")
+        .data(pie(pieData))
+        .enter()
+        .append("text")
+        .attr("transform", d => `translate(${arc.centroid(d)})`)
+        .attr("dy", "0.35em")
+        .style("text-anchor", "middle")
+        .style("font-size", "10px")
+        .style("fill", "white")
+        .text(d => d.data.percentage != 0 ? `${d.data.percentage.toFixed(1)}%` : '');
+
+    infoBox.append("text")
+        .attr("x", 100)
+        .attr("y", 160)
+        .style("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text(`Total Connections: ${node.sourceLinks.length + node.targetLinks.length}`);
+});
+
+// [DRAW] create nodes Vs (Nodes) contribuition in filtered links
+appearingValues.forEach(value => {
+    if (appearingValues.length < 3 && appearingValues.includes(value)) {
+        Vs.append("rect")
+            .attr("width", nodeWidth)
+            .attr("y", d => {
+                let Ys = [];
+                const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
+                let fLinks = links.filter(link => (link.source == d.id || link.target == d.id) && appearingValues.includes(link.value));
+                if (fLinks.some(link => link.source == d.id)) {
+                    fLinks = fLinks.filter(link => link.source == d.id);
+                } else {
+                    fLinks = fLinks.filter(link => link.target == d.id);
+                }
+
+                fLinks.forEach(link => {
+                    if (link.source == d.id) {
+                        Ys.push((link.y0 - d.y) - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+                    } else {
+                        Ys.push((link.y1 - d.y) - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+                    }
+                });
+
+                const minY = Math.min(...Ys);
+                return minY;
+            })
+            .attr("height", d => {
+                let Ys0 = []
+                let Ys1 = []
+                const mod = d.id[0] == "Q" ? K * REDUCTOR_Q : d.id[0] == "K" ? K * REDUCTOR_K : K;
+                const fLinks = filteredLinks.filter(link => link.source == d.id || link.target == d.id);
+                fLinks.forEach(link => {
+                    if (link.source == d.id) {
+                        Ys0.push(link.y0 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+                    } else {
+                        Ys0.push(link.y1 - (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+                    }
+                });
+                fLinks.forEach(link => {
+                    if (link.source == d.id) {
+                        Ys1.push(link.y0 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+                    } else {
+                        Ys1.push(link.y1 + (link.qtd ? link.qtd * (mod / 2) : (mod / 2)));
+                    }
+                });
+                const height = Math.max(...Ys1) - Math.min(...Ys0)
+                return height;
+            })
+            .style("fill", "steelblue")
+    }
+});
+
+// [DRAW] create nodes Vs Labels
 Vs.append("text")
     .text(d => d.id)
     .attr("x", nodeWidth / 2)
